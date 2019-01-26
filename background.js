@@ -5,7 +5,7 @@ const GOOGLE_CONTAINER_ICON = "briefcase";
 let GOOGLE_DOMAINS = [
   "google.com", "google.org", "googleapis.com", "g.co", "ggpht.com",
   "blogger.com", "googleblog.com", "blog.google", "googleusercontent.com", "googlesource.com",
-  "google.org", "google.net", "466453.com", "gooogle.com", "gogle.com", "ggoogle.com", "gogole.com", "goolge.com", "googel.com", "googlee.com", "googil.com", "googlr.com", "elgoog.im", "ai.google", "com.google", 
+  "google.org", "google.net", "466453.com", "gooogle.com", "gogle.com", "ggoogle.com", "gogole.com", "goolge.com", "googel.com", "googlee.com", "googil.com", "googlr.com", "elgoog.im", "ai.google", "com.google",
 ];
 
 const GOOGLE_INTL_DOMAINS = [
@@ -13,7 +13,7 @@ const GOOGLE_INTL_DOMAINS = [
 ];
 
 const GOOGLE_SERVICES = [
-"like.com", "keyhole.com", "panoramio.com", "picasa.com", "urchin.com", "igoogle.com", "foofle.com", "froogle.com", "localguidesconnect.com", "googlemail.com", "googleanalytics.com", "google-analytics.com", "googletagmanager.com", "googlecode.com", "googlesource.com", "googledrive.com", "googlearth.com", "googleearth.com", "googlemaps.com", "googlepagecreator.com", "googlescholar.com", "advertisercommunity.com", "thinkwithgoogle.com",
+  "like.com", "keyhole.com", "panoramio.com", "picasa.com", "urchin.com", "igoogle.com", "foofle.com", "froogle.com", "localguidesconnect.com", "googlemail.com", "googleanalytics.com", "google-analytics.com", "googletagmanager.com", "googlecode.com", "googlesource.com", "googledrive.com", "googlearth.com", "googleearth.com", "googlemaps.com", "googlepagecreator.com", "googlescholar.com", "advertisercommunity.com", "thinkwithgoogle.com",
 ];
 const YOUTUBE_DOMAINS = [
   "youtube.com", "youtu.be", "yt.be", "ytimg.com", " youtube-nocookie.com", "youtubegaming.com", "youtubeeducation.com", "youtube-nocookie.com",
@@ -25,7 +25,7 @@ const ALPHABET_DOMAINS = [
 
 const AD_DOMAINS = [
   "doubleclickbygoogle.com", "feedburner.com", "doubleclick.com", "doubleclick.net", "adwords.com", "adsense.com", "admob.com", "advertisercommunity.com",
-  "googlesyndication.com", "googlecommerce.com", "googlebot.com", "googleapps.com", "googleadservices.com", "gmodules.com", "googl.com", 
+  "googlesyndication.com", "googlecommerce.com", "googlebot.com", "googleapps.com", "googleadservices.com", "gmodules.com", "googl.com",
   "1e100.net", "domains.google", "gv.com",
 ];
 
@@ -33,10 +33,15 @@ const DEVELOPER_DOMAINS = [
   "madewithcode.com", "design.google", "gallery.io", "domains.google", "material.io", "android.com", "chromium.org", "cobrasearch.com", "chromecast.com", "chrome.com", "chromebook.com", "madewithcode.com", "whatbrowser.org", "withgoogle.com", "web.dev",
 ];
 
+const CSUF_DOMAINS = [
+  "my.fullerton.edu",
+  "shibboleth.fullerton.edu"
+];
+
 
 GOOGLE_DOMAINS = GOOGLE_DOMAINS.concat(GOOGLE_INTL_DOMAINS)
   .concat(GOOGLE_SERVICES).concat(YOUTUBE_DOMAINS).concat(BLOGSPOT_DOMAINS).concat(ALPHABET_DOMAINS)
-  .concat(DEVELOPER_DOMAINS).concat(AD_DOMAINS);
+  .concat(DEVELOPER_DOMAINS).concat(AD_DOMAINS).concat(CSUF_DOMAINS);
 
 
 
@@ -49,7 +54,7 @@ const canceledRequests = {};
 const tabsWaitingToLoad = {};
 const googleHostREs = [];
 
-async function isMACAddonEnabled () {
+async function isMACAddonEnabled() {
   try {
     const macAddonInfo = await browser.management.get(MAC_ADDON_ID);
     if (macAddonInfo.enabled) {
@@ -61,7 +66,7 @@ async function isMACAddonEnabled () {
   return false;
 }
 
-async function setupMACAddonManagementListeners () {
+async function setupMACAddonManagementListeners() {
   browser.management.onInstalled.addListener(info => {
     if (info.id === MAC_ADDON_ID) {
       macAddonEnabled = true;
@@ -84,7 +89,7 @@ async function setupMACAddonManagementListeners () {
   });
 }
 
-async function getMACAssignment (url) {
+async function getMACAssignment(url) {
   if (!macAddonEnabled) {
     return false;
   }
@@ -100,7 +105,7 @@ async function getMACAssignment (url) {
   }
 }
 
-function cancelRequest (tab, options) {
+function cancelRequest(tab, options) {
   // we decided to cancel the request at this point, register canceled request
   canceledRequests[tab.id] = {
     requestIds: {
@@ -121,14 +126,14 @@ function cancelRequest (tab, options) {
   }, 2000);
 }
 
-function shouldCancelEarly (tab, options) {
+function shouldCancelEarly(tab, options) {
   // we decided to cancel the request at this point
   if (!canceledRequests[tab.id]) {
     cancelRequest(tab, options);
   } else {
     let cancelEarly = false;
     if (canceledRequests[tab.id].requestIds[options.requestId] ||
-        canceledRequests[tab.id].urls[options.url]) {
+      canceledRequests[tab.id].urls[options.url]) {
       // same requestId or url from the same tab
       // this is a redirect that we have to cancel early to prevent opening two tabs
       cancelEarly = true;
@@ -143,13 +148,13 @@ function shouldCancelEarly (tab, options) {
   return false;
 }
 
-function generateGoogleHostREs () {
+function generateGoogleHostREs() {
   for (let googleDomain of GOOGLE_DOMAINS) {
     googleHostREs.push(new RegExp(`^(.*\\.)?${googleDomain}$`));
   }
 }
 
-async function clearGoogleCookies () {
+async function clearGoogleCookies() {
   // Clear all google cookies
   const containers = await browser.contextualIdentities.query({});
   containers.push({
@@ -170,8 +175,8 @@ async function clearGoogleCookies () {
 
     // dont clear cookies for googleDomain if mac assigned (with or without www.)
     if (macAddonEnabled &&
-        (macAssignments.includes(googleDomain) ||
-         macAssignments.includes(`www.${googleDomain}`))) {
+      (macAssignments.includes(googleDomain) ||
+        macAssignments.includes(`www.${googleDomain}`))) {
       return;
     }
 
@@ -198,9 +203,9 @@ async function clearGoogleCookies () {
   });
 }
 
-async function setupContainer () {
+async function setupContainer() {
   // Use existing Google container, or create one
-  const contexts = await browser.contextualIdentities.query({name: GOOGLE_CONTAINER_NAME});
+  const contexts = await browser.contextualIdentities.query({ name: GOOGLE_CONTAINER_NAME });
   if (contexts.length > 0) {
     googleCookieStoreId = contexts[0].cookieStoreId;
   } else {
@@ -213,7 +218,7 @@ async function setupContainer () {
   }
 }
 
-function reopenTab ({url, tab, cookieStoreId}) {
+function reopenTab({ url, tab, cookieStoreId }) {
   browser.tabs.create({
     url,
     cookieStoreId,
@@ -224,7 +229,7 @@ function reopenTab ({url, tab, cookieStoreId}) {
   browser.tabs.remove(tab.id);
 }
 
-function isGoogleURL (url) {
+function isGoogleURL(url) {
   const parsedUrl = new URL(url);
   for (let googleHostRE of googleHostREs) {
     if (googleHostRE.test(parsedUrl.host)) {
@@ -234,7 +239,7 @@ function isGoogleURL (url) {
   return false;
 }
 
-function shouldContainInto (url, tab) {
+function shouldContainInto(url, tab) {
   if (!url.startsWith("http")) {
     // we only handle URLs starting with http(s)
     return false;
@@ -255,7 +260,7 @@ function shouldContainInto (url, tab) {
   return false;
 }
 
-async function maybeReopenAlreadyOpenTabs () {
+async function maybeReopenAlreadyOpenTabs() {
   const maybeReopenTab = async tab => {
     const macAssigned = await getMACAssignment(tab.url);
     if (macAssigned) {
@@ -317,7 +322,7 @@ async function maybeReopenAlreadyOpenTabs () {
   });
 }
 
-async function containGoogle (options) {
+async function containGoogle(options) {
   // Listen to requests and open Google into its Container,
   // open other sites into the default tab context
   if (options.tabId === -1) {
@@ -351,7 +356,7 @@ async function containGoogle (options) {
   }
   if (shouldCancelEarly(tab, options)) {
     // We need to cancel early to prevent multiple reopenings
-    return {cancel: true};
+    return { cancel: true };
   }
   // Decided to contain
   reopenTab({
@@ -359,7 +364,7 @@ async function containGoogle (options) {
     tab,
     cookieStoreId
   });
-  return {cancel: true};
+  return { cancel: true };
 }
 
 (async function init() {
@@ -384,15 +389,15 @@ async function containGoogle (options) {
     if (canceledRequests[options.tabId]) {
       delete canceledRequests[options.tabId];
     }
-  },{urls: ["<all_urls>"], types: ["main_frame"]});
+  }, { urls: ["<all_urls>"], types: ["main_frame"] });
   browser.webRequest.onErrorOccurred.addListener((options) => {
     if (canceledRequests[options.tabId]) {
       delete canceledRequests[options.tabId];
     }
-  },{urls: ["<all_urls>"], types: ["main_frame"]});
+  }, { urls: ["<all_urls>"], types: ["main_frame"] });
 
   // Add the request listener
-  browser.webRequest.onBeforeRequest.addListener(containGoogle, {urls: ["<all_urls>"], types: ["main_frame"]}, ["blocking"]);
+  browser.webRequest.onBeforeRequest.addListener(containGoogle, { urls: ["<all_urls>"], types: ["main_frame"] }, ["blocking"]);
 
   maybeReopenAlreadyOpenTabs();
 })();
